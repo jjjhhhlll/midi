@@ -1,0 +1,59 @@
+-- stuck-in-the-nukage
+
+-- intro
+d1 $ stack [
+     n "c3 _ _ _ bf2" # s "supersaw"
+   , n "c4 ef4 bf3 c4 g3 _" # s "supersquare"
+   ] # gain 0.5
+
+
+-- awkward timing
+let pats =
+      [
+        ("a", stack [n "c3 _ _ bf2 _" # s "supersaw" # gain "0.7"
+                    ,s "bd sn*2 sn:1 ~ sn:3?" # gain "0.7"
+                    ]
+        ),
+        ("b", stack [n "c3 ef3 bf2 c3 g2 _" # s "supersquare" # gain "0.7"
+                    ,s "bd ~ bd ~ bd sn:4*2" # gain "0.7"
+                    ]
+        )
+      ]
+in
+d1 $ ur 4 "a a a b" pats []
+
+d1 $ silence
+
+resetCycles
+
+
+-- vanilla bass
+d1 $ slow 4 $ timeCat [ 
+    (15/5, n "[c3 _ _ bf2 _]*3" # s "supersquare" # gain "0.8 0.7")
+   ,(6/5, n "c3 ef3 bf2 c3 g2 _" # s "supersquare" # gain "0.7 0.8 0.7 0.8 0.8")]
+
+-- pedal tone
+xfade 3 $ slow 8 $ timeCat [
+    (15/5, n "[c2 _ _ bf1 _]*3") 
+   ,(6/5, n   "c2 _ _ _ bf1 _" )
+   ] # s "supersaw"
+
+-- extra distorted bass
+xfade 3  $ slow 4 $ timeCat [ 
+    (15/5, n "[c3 _ _ bf2 _]*3" # s "supersaw") 
+   ,(6/5, n "c3 ef3 bf2 c3 g2 _" # s "supersaw") ] # gain 0.7 # ring 0.1 # ringf (sine + 900000) # shape 0.5 # lfo (sine * 10) # gain 0.6  
+
+
+
+
+d2 $ slow 3 "bd sn*2 sn:4 ~ sn:3?" # gain 0.7 
+
+d2 $ silence
+
+clutch 2 $ slow 4 $ timeCat [
+              (15/5, s "[bd sn*2 sn:1 ~ sn:3?]*3")
+             ,(6/5, s "bd sn:4 bd sn:4*2?0.3 bd sn:4*2")
+             ]  # gain 0.7 
+
+
+hush
