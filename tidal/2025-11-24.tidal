@@ -1,0 +1,9 @@
+d1 $ fast 8 $ sound "bd" # gain 0.7 # speed (range 1 8 $ cF 1 "mousey") # crush (range  5000 2 $ cF 1 "mousex")
+
+d1 $ fast "<2 1>" $ n "c3" # s "supersaw" + n "{1*<1 4> 2}%2" # lpf (range 20000 20000 $ cF 20000 "mousey") 
+    # ring 0.5 
+    # ringf (range 440 880 $ cF 440 "mousex") # gain 0.7 + n "<0 0 -5 -4>"
+
+d2 $ sometimes ghost $ sound "sn:1(<3 5>,7,<1 2>)" # gain 0.6 # crush "[3 3.5 2.8]" # room 0.9
+
+hush
