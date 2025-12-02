@@ -1,0 +1,46 @@
+
+setcps(60/120) 
+
+d1
+   -- $ off 0.5 (+ "7")
+   -- $ off 0.25 (+ "9")
+   -- $ off 0.75 (+ "2")
+   $ n "c6" # sound "superzow" + n "{-2 0 0 3 0 0 -2 0 3 0 <-2 -2 -2 8> <0 0 0 7> <3 3 3 -2>}%<26 39 52>" + n "<0 0 -5 -5>" 
+   # legato (range 0.8 1.5 $ sine)
+   # lpf (range 280 8000 $ slow 1.3 $ smooth 0.9)
+   # gain 0.6
+   # detune (range 1 "{<8.5 9.6>}" $ slow 1.6 $ sine)
+   # slide (range 1 "<2 3 4 5>" $ slow 8 $ sine)
+   # room 0.3
+
+d1 $ silence
+
+d2 
+    -- $ off 0 (+ n "12")
+    $ n "c3" # s "supersquare"
+    + n "0 _ _ 2 _ _ 3 _ _ 5 _ <7 7 7 8> _" + n "<0 0 -5 -5>"
+    # voice (range 0.1 1.8 $ slow 9 $ sine)
+    -- # accelerate 0.03
+    -- # semitone 7
+    -- # pitch1 8
+    # lfo 1.4
+    # rate 4
+    # room 0.2
+    # gain 0.6
+    # legato (range 0.8 2 $ sine)
+
+d2 $ silence
+
+d3 
+    $ stack [
+    s "bd:4 ~ bd:4 ~    bd:4 ~    ~ ~ ~    bd:4 ~  ~    ~" # gain 1.0,
+    s "~  ~ ~  sn:1 ~  sn:1 ~ ~ sn:1 ~  ~  sn:2 sn:2" #  gain 0.8,
+    s "[cc:5|cc:4|cc:3] ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~" # gain 0.7,
+    s "{hh hh hh ~ hh ~ hh ~}%13" # gain 0.8
+] # gain 0.7
+    # ringf "[440|550|660|770|880]*13" # ring 0.9
+    # room 0.5 # dry 0.5
+
+d3 $ silence
+
+hush
