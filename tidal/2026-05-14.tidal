@@ -1,0 +1,50 @@
+resetCycles
+
+d1 $ s "bd ~ bd ~ bd ~ ~" # room 0.5 # gain 0.9
+
+d1 $ s "bd ~ bd ~ bd ~ ~" # gain 1.9 # octer (range 0 1.5 $ cF 1 "mousex") # octersub (range 0 1.5 $ cF 1 "mousey")
+
+d1 $ silence
+
+
+d2 $ s "~ ~ ~ ~ ~ ~ coins" # gain 1.4 # fshift (range 0 109 $ cF 100 "mousex") 
+
+d2 $ sometimes ghost $ s "~ ~ ~ ~ ~ ~ <coins*100 coins*50>" # gain 1.5 # octer (range 0 1.5 $ cF 1 "mousex") # lpf (range 2000 6000 $ cF 3000 "mousey") 
+
+d2 $ silence
+
+
+d3 $ ghost $ ghost $ s "~ ~ can:1 can:4 ~ can:3 ~" # gain 1.9 # ring 0.8 # ringf (range 1 100 $ cF 2 "mousex") # lpf 500
+
+d3 $ silence
+
+
+d4 $ n "{<e3 e2> <e3 e2> e2 <e2*2 e3*2> e2 <d2 d2 f2> ~}%14" # s "supersaw" # fshift (range 0 7 $ cF 100 "mousex") # gain "{0.9 0.9 1.1}%7" # shape (range 0.6 1 $ cF 1 "mousey") 
+
+d4 $ n "<e2 e3> <e2> e2 <e2*2 e3*2> <e2 e3> <d2 d2 f2> ~" # s "supersaw" # fshift (range 0 7 $ cF 100 "mousex") # gain "{0.9 0.9 1.1}%7" # shape (range 0.6 1 $ cF 1 "mousey") 
+
+d4 $ silence
+
+
+d5 $ n "e3 _ _ _ _ _ ~" # s "supersquare" # gain (range 0.8 1.3 $ cF 1.1 "mousey") # sustain 3 # shape 0.4 
+
+d5 $ silence
+
+
+d6 $ sometimes ghost $ s "hh*14" # gain "1.4*7 0.8" # fshift (range 0.5 10 $ cF 0 "mousey")
+
+d6 $ silence
+
+d7 $ s "~ ~ ~ ~ ~ ~ sd:2" # gain 1.1 
+
+d7 $ s "~ sd:2 ~ sd:2 ~ ~ sd:2" # gain 1.1 # room 0.5
+
+d7 $ s "{sd*3 sd sd*3} ~ {sd*3 sd sd:3} ~ {sd:3*7 sd sd} ~ {sd*2 sd:1}" # gain 1.1 # fshift (range 0 309 $ cF 100 "mousex") 
+
+d7 $ s "~ {sd*3 sd sd*3} ~ {sd*3 sd sd:3} ~ {sd:3*7 sd sd} {sd*2 sd:1}" # gain "{0.9 0.9 1.1}%6" # fshift (range 0 309 $ cF 100 "mousex") 
+
+d7 $ s "~ ~ {sd*3 sd sd*3} {sd*3 sd sd:3} ~ {sd:3*7 sd sd} {sd*2 sd:1}" # gain "{0.9 0.9 1.1}%5" # fshift (range 0 309 $ cF 100 "mousex") 
+
+d7 $ silence
+
+hush
