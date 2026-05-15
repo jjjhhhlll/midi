@@ -1,0 +1,59 @@
+setcps(0.5)
+
+setcps(5)
+
+setcps(20)
+
+setcps(3)
+
+setcps(0.2)
+
+setcps(0.3)
+
+d1 $ s "bd ~ ~ ~ ~ ~ ~" # gain 0.8
+
+d1 $ s "bd ~ bd ~ bd <sd*2 sd>? <sd sd*2>" 
+   # gain "<1.0 0.9 1.1>"
+   # shape (range 0.6 0.80 $ cF 0 "mousey") 
+   # crush (range 10 4 $ cF 0 "mousex")
+   # lpfrecv 1
+   # room 0.2
+
+d1 $ silence
+
+
+d2 $ s "hh*14" # gain "<0.8 1.1> 1.1 0.8 1.0 0.9 0.8 1.1"
+    # shape (range 0.1 0.90 $ cF 0 "mousey")
+    # crush (range 5 3 $ cF 0 "mousex")
+    # room 0.2
+    # lpfrecv 1
+
+d2 $ silence
+
+
+d5 $ n "<c4 c5 c3> _ _ _ _ _ ~"  # s "supersaw" 
+   # resonance (range 0.7 0.9 $ cF 0 "mousey")
+   # rate 0.3 
+   # sustain 3
+   # hpf (range 0 2000 $ cF 200 "mousex") 
+   # shape (range 0 0.8 $ cF 0 "mousey") 
+   # lfo (range 1 0 $ cF 0 "mousex")
+
+d5 $ silence
+
+d6 $ n "c6 ~ ~ c4 ~ c3 0" # s "superchip" 
+   # slide 0.1
+   # rate 10
+   # voice (range 1 1.1 $ cF 2 "mousex")
+   # gain 1.1
+   # shaperecv 2
+   # lforecv 1
+
+d6 $ silence
+
+
+d9 $ slow 3 $ lpfbus 1 $ segment 512 $ (range 5900 10000 $ sine)
+
+d10 $ slow 5 $ shapebus 2 $ segment 16 $ (range 0 0.8 $ sine)
+
+hush
