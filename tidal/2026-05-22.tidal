@@ -1,0 +1,70 @@
+d1 $ s "feelfx"
+
+d1 $ silence
+
+d2 $ fast 1 $ s "feelfx:1 feel <feel:3? feel:2*3>"
+    # crush (range 10 4 $ cF 3 "mousey")
+    # shape (range 0.6 0.01 $ cF 0 "mousey")
+    # gain 0.8
+    # room 0.1
+
+d2 $ silence
+
+d3 $ s "~ ~ feelfx:2" 
+    # crush (range 10 3 $ cF 3 "mousex")
+    # shape (range 0.8 0 $ cF 0 "mousex")
+
+d3 $ silence
+
+d4 $ s "~ ~ ~ <feelfx:5 feelfx:5*2>" 
+   # gain (range 0.8 1.0 $ cF  0.8 "mousex")
+
+d4 $ silence
+
+d5 $ n "{f4 f3 c5 e3 e2 e3}%6"
+    # s "supersaw"
+    # semitone "{12 5 5 5 12 15 12 3}%8"
+    # resonance (range 0 0.4 $ cF 0.4 "mousey")
+    # room 0.2
+    # pitch1 (range 0.4 1 $ cF 0.5 "mousey")
+    # crush (range 10 6 $ cF 5 "mousey")
+    # gain 0.85
+    # legato 1.1
+
+d5 $ n "{f4 f3 c4 f3 e3 e2 e3}%9"
+    # s "supersaw"
+    # semitone "{12 5 5 5 12 15 12 24 12 12 24 3}%8"
+    # resonance (range 0 0.4 $ cF 0.4 "mousey")
+    # room 0.2
+    # pitch1 (range 0.4 1 $ cF 0.5 "mousey")
+    # crush (range 10 6 $ cF 5 "mousey")
+    # gain 0.85
+
+d5 $ n "{f3 b3 c4 f3 b3 c4 e3 b3 c4 e3 b3 c4}%9" 
+    # s "supersaw"
+    # gain "{0.8 0.9 1.0 0.9}%9"
+    # semitone "{3 5 7 9 12 15 24 24 24}%8"
+    # resonance 0.6
+    # lfo 200
+    # pitch1 (range 0.8 0.5 $ cF 0.8 "mousey")
+    # room 0.5
+    # gain 0.9
+
+d5 $ silence
+
+d6 $ slow 4 $ n "f4*9 e4*9" # s "superhoover"
+    # lpf (range 4000 6000 $ cF 4000 "mousex")
+    # room 0.5
+    # crush (range 7 3 $ cF 5 "mousex")
+    # gain 0.7
+    # sustain 1
+
+d6 $ slow 4 $ n "f4 e4" # s "superhoover"
+    # lpf 5000
+    # room 0.5
+    # crush 3
+    # gain 0.9
+
+d6 $ silence
+
+hush
