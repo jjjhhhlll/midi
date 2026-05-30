@@ -1,0 +1,57 @@
+-- arranging 2026-05-22 into a complete composition using seqPs
+
+-- d1 loud 0-8 (two slow cycles)
+-- d1 quiet 8-16 (two slow cycles)
+-- d2 comes in at start of 2nd d1 quiet (12)
+-- d3 comes in after 3 d2 cycles
+-- d4 comes in after 3 d3 cycles
+-- d5 comes in after 11 d4 cycles
+-- d6 comes in after 6 d5 cycles
+-- d1 stops after 8 d6 cycles
+-- d1 comes back loud after 16 cycles?
+
+do
+    resetCycles
+    d1 $ seqP [
+        (0, 8, slow 4 $ n "f4 e4" 
+            # s "superhoover" 
+            # lpf 5000 
+            # room 0.5 
+            # crush 3 
+            # gain 0.9),
+        (8, 45, slow 4 $ n "f4*9 e4*9" # s "superhoover" 
+            # lpf (range 4000 6000 $ cF 4000 "mousex") 
+            # room 0.5 # crush (range 7 3 $ cF 5 "mousex") 
+            # gain 0.6 # sustain 1),
+        (60, 68, slow 4 $ n "f4 e4" # s "superhoover" 
+            # lpf 5000 
+            # room 0.5 
+            # crush 3 
+            # gain 0.9) ]
+    d2 $ seqP [
+        (12, 80, s "feelfx") ]
+    d3 $ seqP [
+        (15, 80, s "~ ~ feelfx:2" 
+            # crush (range 10 3 $ cF 3 "mousex")
+            # shape (range 0.8 0 $ cF 0 "mousex")) ]
+    d4 $ seqP [
+        (18, 80, s "~ ~ ~ <feelfx:5 feelfx:5*2>" 
+            # gain (range 0.8 1.0 $ cF  0.8 "mousex")) ]
+    d5 $ seqP [
+        (29, 80, fast 1 $ s "feelfx:1 feel <feel:3? feel:2*3>"
+            # crush (range 10 4 $ cF 3 "mousey")
+            # shape (range 0.6 0.01 $ cF 0 "mousey")
+            # gain 0.8
+            # room 0.1) ]
+    d6 $ seqP [
+        (37, 80, n "{f4 f3 c5 e3 e2 e3}%6"
+            # s "supersaw"
+            # semitone "{12 5 5 5 12 15 12 3}%8"
+            # resonance (range 0 0.4 $ cF 0.4 "mousey")
+            # room 0.2
+            # pitch1 (range 0.4 1 $ cF 0.5 "mousey")
+            # crush (range 10 6 $ cF 5 "mousey")
+            # gain 0.85
+            # legato 1.1) ]
+
+hush
