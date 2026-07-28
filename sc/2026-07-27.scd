@@ -1,4 +1,9 @@
 // from https://www.youtube.com/watch?v=7vwksSWMSIM&list=PLELlGNnfZwb24FQv4nWhczfj0dWvn1EzM&index=38
+(
+s.quit;
+s.options.memSize = 65536;
+s.boot;
+)
 
 (
 SynthDef(\kick, {
@@ -13,9 +18,8 @@ SynthDef(\kick, {
 	snd = snd * Env.linen(0.0, 0.5, 0.1, curve: -4).ar(Done.freeSelf);
 	Out.ar(\out.kr(0), snd);
 }).add;
-)
 
-(
+
 SynthDef(\snare, {
 	var snd;
 	snd = SinOsc.ar(Env.perc(0, 0.1).ar.linexp(0, 1, 230, 400) * XLine.ar(1.3, 1, 0.01) * [1, 2.3, 5.7]);
@@ -30,6 +34,25 @@ SynthDef(\snare, {
 	snd = snd + PitchShift.ar(snd, 0.053, 1.5);
 	snd = snd * 1.dbamp;
 	snd = snd * Env.linen(0.0, 0.5, 0.1, curve: -4).ar(Done.freeSelf);
+	Out.ar(\out.kr(0), snd);
+}).add;
+
+SynthDef(\hat, {
+	var snd;
+	snd = { WhiteNoise.ar } ! 5;
+	snd = CombC.ar(snd, 0.2, 1 / [123, 234, 42, 66], 1.0).sum;
+	snd = LeakDC.ar(snd);
+	snd = FreqShift.ar(snd, 45);
+	snd = snd * Env.perc(0.001, 1.0).ar;
+	snd = LPF.ar(snd, XLine.ar(16e3, 1e3, 5.0));
+	snd = BPF.ar(snd, (0..20).pow(0.5).normalize.linexp(0, 1, 1000, 8000), 0.05).sum;
+	snd = BHiShelf.ar(snd, 4334, 0.3, -3);
+	snd = snd + (SinOsc.ar(XLine.ar(16000, 1000, 0.005)) * Env.perc(0.001, 0.005).ar * 3.dbamp);
+	snd = snd + GVerb.ar(snd, 30, 3);
+
+	snd = snd * -26.dbamp;
+
+	snd = snd * Env.linen(0.0, 5.5, 0.1, curve: -4).ar(Done.freeSelf);
 	Out.ar(\out.kr(0), snd);
 }).add;
 
@@ -89,7 +112,9 @@ Routine({
 		trigger.();
 		play.(\kick, [1, 2].choose);
 		trigger.();
-		play.(\snare, [1 / 2, 1 / 3].choose);
+		play.(\snare, [1,  5].choose);
+		trigger.();
+		play.(\hat, [1 / 2, 1 / 3].choose);
 	};
 }).play;
 )
