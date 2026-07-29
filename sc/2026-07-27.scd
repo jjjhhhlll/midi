@@ -63,11 +63,12 @@ SynthDef(\fx, {
 	wet = snd;
 	fb = LocalIn.ar(2);
 	fb = DelayC.ar(fb, 1.0, TRand.ar(0, 0.2, trigger).lag(0.5));
-	fb = fb * -10.dbamp;
+	// fb = fb * -10.dbamp;
+	fb = fb * MouseX.kr(-10, 10, 0).dbamp;
 	fb = LeakDC.ar(fb);
 	fb = Limiter.ar(fb);
 	wet = wet + fb;
-	wet = wet + GVerb.ar(wet.sum * -15.dbamp, 30, 1);
+	wet = wet + GVerb.ar(wet.sum * -15.dbamp, 30, MouseY.kr(1, 5, 1));
 	wet = wet + PitchShift.ar(wet, 0.1, SinOsc.ar(TExpRand.ar(0.3, 6, trigger)).linexp(-1, 1, 0.5, 3));
 	wet = wet + PitchShift.ar(wet, 0.05, TExpRand.ar(0.5, 2, trigger));
 	LocalOut.ar(wet);
@@ -92,7 +93,6 @@ playP = { |synthDef, duration, args = #[]|
 	s.bind { Synth(synthDef, [duration: duration * beat]) };
 };
 
-
 play = { |synthDef, duration, args = #[]|
 	playP.(synthDef, duration, args);
 	(duration * beat).wait;
@@ -111,8 +111,12 @@ Routine({
 	loop {
 		trigger.();
 		play.(\kick, [1, 2].choose);
+		play.(\kick, [1, 2].choose);
+		play.(\kick, [1, 4].choose);
+
 		trigger.();
-		play.(\snare, [1,  5].choose);
+		play.(\snare, [1, 5 ].choose);
+
 		trigger.();
 		play.(\hat, [1 / 2, 1 / 3].choose);
 	};
