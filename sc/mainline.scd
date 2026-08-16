@@ -1,14 +1,37 @@
 
 
 (
+
+var lfo;
+
+lfo = { |rate|
+	LFNoise2.kr(rate) + LFNoise2.kr(rate * 2) + TRand.kr(-1, 1, Dust.kr(rate)).lag(0.01);
+};
+
+
 SynthDef(\bass, {
-	var snd, freq, buzz, gate;
+	var snd, freq, buzz, exciter, gate, fb;
 
 	gate = \gate.kr(1);
 	freq = \freq.kr(38.midicps) * (1 + Env([0, 0.2, 0], [TRand.kr(0.001, 0.06, gate), 0.1], [0, -4]).ar);
 
-	snd = SinOsc.ar(freq);
+	exciter = SinOsc.ar(Env.perc(0, 0.01).ar(gate: gate).linexp(0, 1, 100, 7000)) * Env.perc(0.0, 0.05).ar(gate: gate);
+
+	snd = Pluck.ar(exciter, gate, 2.0, 1 / (freq * (TWChoose.kr(gate, [ 1, 0.5, 2 ], [0, 1, 0]))! 2), 4.0, TRand.kr(0.3, 0.8, gate));
+
+	fb = LocalIn.ar(2);
+	fb = DelayC.ar(fb, 0.3, 0.003);
+
+	fb = fb * SinOsc.ar(60/140);
+	fb = BPF.ar(fb, [146, 293]);
+	fb = fb * -8.dbamp;
+
+	snd = snd + fb;
+
 	snd = snd + LFTri.ar(freq * 0.5) * LFNoise2.kr(60/140).range(-10, -2).dbamp;
+
+
+
 	buzz = snd;
 
 	buzz = buzz + (BPF.ar( { WhiteNoise.ar } ! 2, 8210, 0.3) * -20.dbamp);
@@ -21,13 +44,19 @@ SynthDef(\bass, {
 	buzz = LeakDC.ar(buzz);
 	buzz = HPF.ar(buzz, LFNoise2.kr(5/140).range(600, 800)) * -12.dbamp;
 	buzz = BPeakEQ.ar(buzz, 3120, 0.3, 3);
-	buzz = GVerb.ar(buzz, 10, TRand.kr(0, 10, gate)) * -10.dbamp;
+	buzz = GVerb.ar(buzz, 20, TRand.kr(0, 10, gate)) * -10.dbamp;
 
 
+	snd = BLowShelf.ar(snd, 300, 1, 10);
+	snd = BHiShelf.ar(snd, 4186, 1, -10);
 	snd = (snd * 5 * [1, -1]).tanh + buzz;
+	snd = BLowShelf.ar(snd, 300, 1, 10);
+	snd = BHiShelf.ar(snd, 4186, 1, 5);
+
+	snd = LeakDC.ar(snd);
 
 	snd = LPF.ar(snd, LFNoise2.kr(140/60).clip2.range(200, 18000));
-
+	LocalOut.ar(snd);
 
 	snd = snd * Env.asr(0, 1, 0.15, curve: 4).ar(Done.freeSelf, Impulse.kr(0) + gate);
 	snd = snd * \amp.kr(1) * -15.dbamp;
@@ -38,7 +67,7 @@ SynthDef(\gun, {
 	var snd, fb;
 
 	snd = Pluck.ar(SinOsc.ar(Env.perc(0, 0.001).ar));
-	snd = snd + PinkNoise.ar * Env.perc(0.001, (60/140)*6.85).ar(Done.freeSelf);
+	snd = snd + PinkNoise.ar * Env.perc(0.001, (60/140)*6.85, 1, 1, -8).ar(Done.freeSelf);
 	snd = HPF.ar(snd, 3000);
 
 
@@ -62,7 +91,7 @@ SynthDef(\gun, {
 
 
 	LocalOut.ar(snd);
-	snd = GVerb.ar(snd, 10, 1);
+	snd = GVerb.ar(snd, 1, 1);
 
 	snd = snd ! 2;
 	snd = snd * -28.dbamp;
@@ -95,7 +124,7 @@ Routine({
 		// 7/4
 		Routine({
 			s.bind { Synth(\gun) };
-		}).play;
+		});
 
 		play.(\bass, beat * 1, [ freq: root.midicps ]);
 		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
@@ -110,7 +139,7 @@ Routine({
 
 		Routine({
 			s.bind { Synth(\gun) };
-		}).play;
+		});
 
 		play.(\bass, beat * 1, [ freq: root.midicps ]);
 		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
