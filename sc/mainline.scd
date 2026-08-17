@@ -17,14 +17,17 @@ SynthDef(\bass, {
 
 	exciter = SinOsc.ar(Env.perc(0, 0.01).ar(gate: gate).linexp(0, 1, 100, 7000)) * Env.perc(0.0, 0.05).ar(gate: gate);
 
-	snd = Pluck.ar(exciter, gate, 2.0, 1 / (freq * (TWChoose.kr(gate, [ 1, 0.5, 2 ], [0, 1, 0]))! 2), 4.0, TRand.kr(0.3, 0.8, gate));
+	snd = Pluck.ar(exciter, gate, 2.0, 1 / (freq * [
+		(TWChoose.kr(gate, [ 1, 0.5, 2 ], [0.4, 0.3, 0.3])),
+		(TWChoose.kr(gate, [ 1, 0.5, 2 ], [0.3, 0.3, 0.4]))
+	]), 4.0, TRand.kr(0.3, 0.8, gate));
 
 	fb = LocalIn.ar(2);
 	fb = DelayC.ar(fb, 0.3, 0.003);
 
 	fb = fb * SinOsc.ar(60/140);
 	fb = BPF.ar(fb, [146, 293]);
-	fb = fb * -8.dbamp;
+	fb = fb * -10.dbamp;
 
 	snd = snd + fb;
 
@@ -42,13 +45,13 @@ SynthDef(\bass, {
 
 	buzz = (buzz * 6).wrap2;
 	buzz = LeakDC.ar(buzz);
-	buzz = HPF.ar(buzz, LFNoise2.kr(5/140).range(600, 800)) * -12.dbamp;
+	buzz = HPF.ar(buzz, LFNoise2.kr(5/140).range(600, 800)) * -14.dbamp;
 	buzz = BPeakEQ.ar(buzz, 3120, 0.3, 3);
 	buzz = GVerb.ar(buzz, 20, TRand.kr(0, 10, gate)) * -10.dbamp;
 
 
 	snd = BLowShelf.ar(snd, 300, 1, 10);
-	snd = BHiShelf.ar(snd, 4186, 1, -10);
+	snd = BHiShelf.ar(snd, 4186, 0.9, -10);
 	snd = (snd * 5 * [1, -1]).tanh + buzz;
 	snd = BLowShelf.ar(snd, 300, 1, 10);
 	snd = BHiShelf.ar(snd, 4186, 1, 5);
@@ -59,7 +62,7 @@ SynthDef(\bass, {
 	LocalOut.ar(snd);
 
 	snd = snd * Env.asr(0, 1, 0.15, curve: 4).ar(Done.freeSelf, Impulse.kr(0) + gate);
-	snd = snd * \amp.kr(1) * -15.dbamp;
+	snd = snd * \amp.kr(1) * -19.dbamp;
 	Out.ar(\out.kr(0), snd);
 }).add;
 
@@ -97,11 +100,61 @@ SynthDef(\gun, {
 	snd = snd * -28.dbamp;
 
 	Out.ar(\out.kr(0), snd);
-}).add
+}).add;
+
+SynthDef(\kick, {
+	var snd, clickDuration;
+	clickDuration = 2e-3;
+
+	snd = SinOsc.ar(65 * [-1, 1].midiratio * (1 + (7 * Env.perc(0.001, 0.03).ar))
+		* (1 + (0.5 * Env.perc(0.001, 0.5).ar)));
+
+	snd = Select.ar(Sweep.ar > clickDuration, [ Hasher.ar(Sweep.ar), DelayC.ar(snd, clickDuration, clickDuration)]);
+
+	//snd = snd + (GVerb.ar(snd.sum, 12, 3, damping: 0.3) * -21.dbamp);
+
+	snd = (snd * (1 + (0.3 * Env.perc(0, 0.1).ar))).tanh;
+
+	snd = snd * Env.perc(0.0, 0.5).ar(Done.freeSelf);
+	snd = snd * \amp.kr(1) * -2.dbamp;
+	Out.ar(\out.kr(0), snd);
+}).add;
+
+SynthDef(\kick2, {
+	var snd;
+	snd = SinOsc.ar(Env.perc(0, 0.1).ar.linexp(0, 1, 40, 700) * XLine.ar(2, 1, 0.01));
+	snd = snd * Env.perc(0.001, 0.6).ar;
+	snd = snd * Env.linen(0.0, 0.5, 0.1, curve: -4).ar(Done.freeSelf);
+	snd = snd + (BPF.ar(Hasher.ar(Sweep.ar + [0,1]), 6120, 0.3) * Env.perc(0.02, 0.01).ar * -1.dbamp);
+	snd = snd * (1 + Env.perc(0.001, 0.1).ar);
+	snd = snd.tanh;
+	snd = BLowShelf.ar(snd, 200, 0.3, 5);
+
+	snd = snd * \amp.kr(1) * -2.dbamp;
+	Out.ar(\out.kr(0), snd);
+}).add;
+
+SynthDef(\snare, {
+	var snd;
+	snd = SinOsc.ar(Env.perc(0, 0.1).ar.linexp(0, 1, 40, 440) * XLine.ar(1.3, 1, 0.01));
+
+
+	snd = snd.tanh;
+	snd = snd + (SinOsc.ar(XLine.ar(3000, 100, 0.01)) * Env.perc(0.001, 0.01).ar * 3.dbamp);
+	snd = snd + (BPF.ar(Hasher.ar(Sweep.ar + [0, 1]), 1220, 0.5) * Env.perc(0.01, 0.03).ar * -3.dbamp);
+	snd = snd + (BPF.ar(Hasher.ar(Sweep.ar + [0, 1]), 2520, 0.5) * Env.perc(0.05, 0.1).ar * -3.dbamp);
+	snd = snd + GVerb.ar(snd.sum * -25.dbamp, 30, 8);
+	snd = snd + PitchShift.ar(snd, 0.053, 1.5);
+
+	snd = snd * \amp.kr(1) * -5.dbamp;
+	snd = snd * Env.linen(0.0, \duration.kr(0.5), 0.1, curve: -4).ar(Done.freeSelf);
+	Out.ar(\out.kr(0), snd);
+}).add;
 
 )
 
-var synth = Synth(\bass, [ freq: 38.midicps ]);
+Synth(\kick2);
+Synth(\snare);
 
 (
 var s, bpm, beat, root;
@@ -126,6 +179,17 @@ Routine({
 			s.bind { Synth(\gun) };
 		});
 
+		Routine({
+			s.bind { Synth(\kick2) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare) };
+			(beat * 2).wait;
+			s.bind { Synth(\kick) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare) };
+			beat.wait;
+		}).play;
+
 		play.(\bass, beat * 1, [ freq: root.midicps ]);
 		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 		(beat* 0.5).wait;
@@ -140,6 +204,17 @@ Routine({
 		Routine({
 			s.bind { Synth(\gun) };
 		});
+
+		Routine({
+			s.bind { Synth(\kick) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare) };
+			(beat * 2).wait;
+			s.bind { Synth(\kick2) };
+			(beat * 2.5).wait;
+			s.bind { Synth(\snare) };
+			(beat * 0.5).wait;
+		}).play;
 
 		play.(\bass, beat * 1, [ freq: root.midicps ]);
 		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
