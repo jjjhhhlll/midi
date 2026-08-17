@@ -1,13 +1,9 @@
-
+(
+s.options.memSize = 8192 * 4;
+s.boot;
+)
 
 (
-
-var lfo;
-
-lfo = { |rate|
-	LFNoise2.kr(rate) + LFNoise2.kr(rate * 2) + TRand.kr(-1, 1, Dust.kr(rate)).lag(0.01);
-};
-
 
 SynthDef(\bass, {
 	var snd, freq, buzz, exciter, gate, fb;
@@ -25,7 +21,7 @@ SynthDef(\bass, {
 	fb = LocalIn.ar(2);
 	fb = DelayC.ar(fb, 0.3, 0.003);
 
-	fb = fb * SinOsc.ar(60/140);
+	fb = fb * SinOsc.ar(70/140);
 	fb = BPF.ar(fb, [146, 293]);
 	fb = fb * -10.dbamp;
 
@@ -69,35 +65,19 @@ SynthDef(\bass, {
 SynthDef(\gun, {
 	var snd, fb;
 
-	snd = Pluck.ar(SinOsc.ar(Env.perc(0, 0.001).ar));
-	snd = snd + PinkNoise.ar * Env.perc(0.001, (60/140)*6.85, 1, 1, -8).ar(Done.freeSelf);
-	snd = HPF.ar(snd, 3000);
+	snd = SinOsc.ar(60 * [1, 1.1001]);
+	snd = snd + Hasher.ar(Sweep.ar);
+
+	snd = snd + PitchShift.ar(snd, 0.3, 0.01);
+	snd = BLowShelf.ar(snd, 300, 1, 30);
+	snd = BHiShelf.ar(snd, 4000, 1, 16);
+	snd = snd + (snd * 5).tanh;
+	snd = BLowShelf.ar(snd, 300, 1, -10);
+	snd = BHiShelf.ar(snd, 4000, 1, -10);
 
 
-	snd = snd + Resonz.ar(WhiteNoise.ar, XLine.kr(1900, 200, 0.15), 1.1);
-
-	fb = LocalIn.ar(2);
-	fb = DelayC.ar(fb, 0.25, 0.05);
-
-	fb = fb * MouseX.kr(-80, -10).dbamp;
-
-	snd = snd + fb;
-	snd = snd + PitchShift.ar(snd, 0.15, 0.7);
-
-	snd = BHiShelf.ar(snd, 4000, 1, -20);
-	snd = BLowShelf.ar(snd, 200, 1, -5);
-	snd = (snd * 10).tanh;
-	snd = BHiShelf.ar(snd, 4000, 1, 5);
-	snd = BLowShelf.ar(snd, 200, 1, 10);
-
-	snd = LeakDC.ar(snd);
-
-
-	LocalOut.ar(snd);
-	snd = GVerb.ar(snd, 1, 1);
-
-	snd = snd ! 2;
-	snd = snd * -28.dbamp;
+	snd = snd * Env.perc(0.0, 0.6).ar(Done.freeSelf);
+	snd = snd * \amp.kr(1) * -10.dbamp;
 
 	Out.ar(\out.kr(0), snd);
 }).add;
@@ -111,7 +91,7 @@ SynthDef(\kick, {
 
 	snd = Select.ar(Sweep.ar > clickDuration, [ Hasher.ar(Sweep.ar), DelayC.ar(snd, clickDuration, clickDuration)]);
 
-	//snd = snd + (GVerb.ar(snd.sum, 12, 3, damping: 0.3) * -21.dbamp);
+	snd = snd + (GVerb.ar(snd.sum, 12, 3, damping: 0.3) * -21.dbamp);
 
 	snd = (snd * (1 + (0.3 * Env.perc(0, 0.1).ar))).tanh;
 
@@ -153,8 +133,10 @@ SynthDef(\snare, {
 
 )
 
+Synth(\kick);
 Synth(\kick2);
 Synth(\snare);
+Synth(\gun);
 
 (
 var s, bpm, beat, root;
@@ -167,17 +149,27 @@ root = 38; // d0
 Routine({
 	var play;
 
+
 	play = { |synthDef, duration, args|
 		var synth;
 		s.bind { synth = Synth(synthDef, args ++ [duration: duration]) };
 		duration.wait;
 		s.bind { synth.set(\gate, 0) };
 	};
+
+/*
+	loop {
+		s.bind { Synth(\gun) };
+		(beat * 7).wait;
+	};
+	*/
+
 	loop {
 		// 7/4
+
 		Routine({
 			s.bind { Synth(\gun) };
-		});
+		}).play;
 
 		Routine({
 			s.bind { Synth(\kick2) };
@@ -201,9 +193,6 @@ Routine({
 		(beat * 0.30).wait;
 		play.(\bass, beat * 1, [ freq: (root + 3).midicps ]);
 
-		Routine({
-			s.bind { Synth(\gun) };
-		});
 
 		Routine({
 			s.bind { Synth(\kick) };
