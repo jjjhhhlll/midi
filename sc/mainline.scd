@@ -6,10 +6,11 @@ s.boot;
 (
 
 SynthDef(\bass, {
-	var snd, freq, buzz, exciter, gate, fb;
+	var snd, freq, buzz, exciter, gate, fb, fbDamp;
 
 	gate = \gate.kr(1);
 	freq = \freq.kr(38.midicps) * (1 + Env([0, 0.2, 0], [TRand.kr(0.001, 0.06, gate), 0.1], [0, -4]).ar);
+	fbDamp = \fbDamp.kr(-16.dbamp);
 
 	exciter = SinOsc.ar(Env.perc(0, 0.01).ar(gate: gate).linexp(0, 1, 100, 7000)) * Env.perc(0.0, 0.05).ar(gate: gate);
 
@@ -23,11 +24,11 @@ SynthDef(\bass, {
 
 	fb = fb * SinOsc.ar(70/140);
 	fb = BPF.ar(fb, [146, 293]);
-	fb = fb * -12.dbamp;
+	fb = fb * fbDamp;
 
 	snd = snd + fb;
 
-	snd = snd + LFTri.ar(freq * TWChoose.kr(gate, [0.5, 1, 3], [0.87, 0.12, 0.01])) * LFNoise2.kr(60/140).range(-10, -2).dbamp;
+	snd = snd + LFTri.ar(freq * TWChoose.kr(gate, [0.5, 1, 3], [0.97, 0.02, 0.01])) * LFNoise2.kr(60/140).range(-10, -2).dbamp;
 
 	buzz = snd;
 
@@ -156,17 +157,17 @@ SynthDef(\guitar, {
 	gate = \gate.kr(1);
 
 	snd = Pluck.ar(
-		PinkNoise.ar * Env.asr(0.001, 1.0, 0.1).ar(Done.freeSelf, Impulse.kr(0) + gate),
+		PinkNoise.ar * Env.asr(0.0001, 1.0, 0.1).ar(Done.freeSelf, Impulse.kr(0) + gate),
 		Impulse.ar(140/30) + Dust.ar(1),
 		1,
 		\freq.kr(293).reciprocal,
-		8.0,
-		0.5
+		10.0,
+		0.7
 	);
 
 	fb = LocalIn.ar(2);
 	fb = DelayC.ar(fb, 0.2, 0.03);
-	fb = fb * -7.5.dbamp;
+	fb = fb * -9.dbamp;
 	fb = LPF.ar(fb, 350);
 	snd = snd + fb;
 
@@ -189,7 +190,7 @@ SynthDef(\guitar, {
 }).add;
 
 )
-
+rg 'fbDamp' not found in ca
 Synth(\guitar, [ freq: 38.midicps ]);
 Synth(\kick);
 Synth(\kick2);
@@ -203,6 +204,7 @@ bpm = 140;
 beat = 60 / bpm;
 
 root = 38; // d0
+
 
 Routine({
 	var play;
@@ -247,6 +249,9 @@ Routine({
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 			(beat* 0.5).wait;
+
+
+
 			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
 			play.(\bass, beat * 0.75, [ freq: root.midicps ]);
 			(beat * 0.25).wait;
@@ -346,11 +351,11 @@ Routine({
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 			(beat* 0.5).wait;
-			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, fbDamp: -13.dbamp ]);
 			play.(\bass, beat * 0.75, [ freq: root.midicps ]);
 			(beat * 0.25).wait;
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-			play.(\bass, beat * 1, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 1, [ freq: (root + 5).midicps, fbDamp: -12.dbamp ]);
 			play.(\bass, beat * 0.45, [ freq: (root + 3).midicps, amp:0.9 ]);
 			(beat * 0.05).wait;
 			play.(\bass, beat * 0.45, [ freq: (root + 5).midicps, amp:0.85 ]);
@@ -387,13 +392,13 @@ Routine({
 			play.(\bass, beat * 1, [ freq: root.midicps, amp: 0.9 ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
 			(beat* 0.5).wait;
-			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, amp: 0.9 ]);
+			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -12.dbamp ]);
 			play.(\bass, beat * 0.75, [ freq: root.midicps, amp: 0.9 ]);
 			(beat * 0.25).wait;
 			play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
-			play.(\bass, beat * 0.70, [ freq: (root + 3).midicps, amp: 0.9 ]);
+			play.(\bass, beat * 0.70, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -14.dbamp ]);
 			(beat * 0.30).wait;
-			play.(\bass, beat * 1, [ freq: (root + 3).midicps, amp: 0.9 ]);
+			play.(\bass, beat * 1, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -14.dbamp]);
 		}).play;
 
 		(beat*7).wait;
@@ -419,7 +424,7 @@ Routine({
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 			(beat* 0.5).wait;
-			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, fbDamp: -12.dbamp ]);
 			play.(\bass, beat * 0.75, [ freq: root.midicps ]);
 			(beat * 0.25).wait;
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
@@ -458,7 +463,7 @@ Routine({
 			play.(\bass, beat * 1, [ freq: root.midicps, amp: 0.9 ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
 			(beat* 0.5).wait;
-			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, amp: 0.9 ]);
+			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -11.dbamp ]);
 			play.(\bass, beat * 0.75, [ freq: root.midicps, amp: 0.9 ]);
 			(beat * 0.25).wait;
 			play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
