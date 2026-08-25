@@ -52,8 +52,8 @@ SynthDef(\bass, {
 	snd = BHiShelf.ar(snd, 4186, 1, 5);
 
 	snd = LeakDC.ar(snd);
-
-	snd = LPF.ar(snd, LFNoise2.kr(140/60).clip2.range(200, 18000));
+	snd = BPeakEQ.ar(snd, 293*2, 1.0, 4);
+	snd = TWChoose.ar(gate, [LPF.ar(snd, LFNoise2.kr(140/60).clip2.range(200, 18000)), RLPF.ar(snd, LFNoise2.kr(140/30).clip2.range(200, 4000), 0.6)], [0.95, 0.05]);
 	LocalOut.ar(snd);
 
 	snd = snd * Env.asr(0, 1, 0.15, curve: 4).ar(Done.freeSelf, Impulse.kr(0) + gate);
@@ -143,6 +143,8 @@ SynthDef(\snare, {
 	snd = snd + PitchShift.ar(snd, 0.053, 1.5);
 	snd = snd + PitchShift.ar(snd, 1.03, 0.05);
 
+	snd = RHPF.ar(snd, 200 * XLine.ar(1, 3, 0.01));
+
 	LocalOut.ar(snd);
 
 	snd = snd * \amp.kr(1) * -5.dbamp;
@@ -152,23 +154,24 @@ SynthDef(\snare, {
 
 
 SynthDef(\guitar, {
-	var snd, fb, gate;
+	var snd, fb, gate, dur;
 
 	gate = \gate.kr(1);
+	dur  = \duration.kr(1);
 
 	snd = Pluck.ar(
 		PinkNoise.ar * Env.asr(0.0001, 1.0, 0.1).ar(Done.freeSelf, Impulse.kr(0) + gate),
 		Impulse.ar(140/30) + Dust.ar(1),
 		1,
 		\freq.kr(293).reciprocal,
-		10.0,
-		0.7
+		18.0,
+		XLine.kr(0.85, 0.45, dur)
 	);
 
 	fb = LocalIn.ar(2);
 	fb = DelayC.ar(fb, 0.2, 0.03);
 	fb = fb * -9.dbamp;
-	fb = LPF.ar(fb, 350);
+	fb = LPF.ar(fb, 349);
 	snd = snd + fb;
 
 	snd = snd * -4.dbamp;
@@ -177,11 +180,14 @@ SynthDef(\guitar, {
 
 	snd = BLowShelf.ar(snd, 293, 0.8, -10);
 	snd = BHiShelf.ar(snd, 2349, 1, -10);
-	snd = (snd * 8).tanh;
+	snd = (snd * 6).tanh;
 	snd = BLowShelf.ar(snd, 293, 1, 3);
 	snd = BHiShelf.ar(snd, 2349, 1, 3);
 
-	snd = LPF.ar(snd, 5000);
+	snd = snd + (GVerb.ar(snd.sum, 30, 0.2, damping:0.001) * -18.dbamp);
+
+	snd = RLPF.ar(snd, XLine.kr(698, 4186, dur) + (3 * SinOsc.ar(15/140)), XLine.kr(0.8, 0.4, dur));
+	snd = HPF.ar(snd, 123);
 	LocalOut.ar(snd);
 
 	snd = snd * -14.dbamp;
@@ -190,8 +196,8 @@ SynthDef(\guitar, {
 }).add;
 
 )
-rg 'fbDamp' not found in ca
-Synth(\guitar, [ freq: 38.midicps ]);
+
+Synth(\guitar, [ freq: 38.midicps, dur: 3.0 ]);
 Synth(\kick);
 Synth(\kick2);
 Synth(\snare);
@@ -232,8 +238,17 @@ Routine({
 		Routine({
 			s.bind { Synth(\kick2) };
 			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 20/140 ]) };
-			(beat * 2).wait;
+			s.bind { Synth(\snare, [  delay: 30/140  ]) };
+
+			(beat * 0.5).wait;
+			s.bind { Synth(\snare, [ delay: 0, amp: 0.2 ]) };
+			(beat * 1.0).wait;
+
+			s.bind { Synth(\kick, [ delay: 0, amp: 0.4 ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\kick2, [ delay: 0, amp: 0.3 ]) };
+
+
 			s.bind { Synth(\kick, [ amp: [0.4, 0.1, 0.5].choose ]) };
 			(beat * 0.5).wait;
 			s.bind { Synth(\kick, [ amp: [0.8, 0.6, 0].choose ]) };
@@ -434,8 +449,8 @@ Routine({
 			(beat * 0.05).wait;
 			play.(\bass, beat * 0.45, [ freq: (root + 5).midicps ]);
 			(beat * 0.05).wait;
-			play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
-			(beat * 0.05).wait;
+			play.(\bass, beat * 0.47, [ freq: (root + 7).midicps ]);
+			(beat * 0.03).wait;
 		}).play;
 
 		(beat*7).wait;
