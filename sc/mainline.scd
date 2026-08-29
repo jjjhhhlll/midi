@@ -4,6 +4,15 @@ s.boot;
 )
 
 (
+Buffer.freeAll;
+b = ();
+
+PathName("samples/".resolveRelative).entries.do({ |pn|
+	b.put(pn.fileNameWithoutExtension.asSymbol, Buffer.read(s, pn.fullPath));
+});
+)
+
+(
 
 SynthDef(\bass, {
 	var snd, freq, buzz, exciter, gate, fb, fbDamp;
@@ -46,15 +55,17 @@ SynthDef(\bass, {
 
 
 	snd = BLowShelf.ar(snd, 300, 1, 10);
-	snd = BHiShelf.ar(snd, 4186, 0.9, -10);
+	snd = BHiShelf.ar(snd, 4186*1.5, 0.9, -10);
 	snd = (snd * 5 * [1, -1]).tanh + buzz;
 	snd = BLowShelf.ar(snd, 300, 1, 10);
-	snd = BHiShelf.ar(snd, 4186, 1, 5);
+	snd = BHiShelf.ar(snd, 4186*1.5, 1, 5);
 
 	snd = LeakDC.ar(snd);
 	snd = BPeakEQ.ar(snd, 293*2, 1.0, 4);
 	snd = TWChoose.ar(gate, [LPF.ar(snd, LFNoise2.kr(140/60).clip2.range(200, 18000)), RLPF.ar(snd, LFNoise2.kr(140/30).clip2.range(200, 4000), 0.6)], [0.95, 0.05]);
 	LocalOut.ar(snd);
+	snd = HPF.ar(snd, Line.ar(80, 60, 10/140));
+	snd = LPF.ar(snd, Line.ar(8000, 1500, 30/140));
 
 	snd = snd * Env.asr(0, 1, 0.15, curve: 4).ar(Done.freeSelf, Impulse.kr(0) + gate);
 	snd = snd * \amp.kr(1) * -26.dbamp;
@@ -92,6 +103,29 @@ SynthDef(\gun, {
 
 	Out.ar(\out.kr(0), snd);
 }).add;
+
+
+SynthDef(\gun2, {
+	var snd, buf;
+	buf = b.gun;
+
+	snd = PlayBuf.ar(
+		numChannels: 1,
+		bufnum: buf,
+		rate: BufRateScale.ir(buf) * \rate.ir(1),
+	);
+
+	snd = snd + (GVerb.ar(snd, 10, 3) * -20.dbamp);
+	snd = BLowShelf.ar(snd, 300, 1, 19);
+	snd = BHiShelf.ar(snd, 4000, 1, 10);
+	snd = snd + (snd * 2).tanh;
+	snd = BLowShelf.ar(snd, 300, 1, -10);
+	snd = BHiShelf.ar(snd, 4000, 1, -10);
+	snd = snd ! 2;
+	snd = snd * \amp.kr(1) * -12.dbamp;
+	Out.ar(\out.kr(0), snd);
+}).add;
+
 
 SynthDef(\kick, {
 	var snd, clickDuration;
@@ -184,7 +218,7 @@ SynthDef(\guitar, {
 	snd = BLowShelf.ar(snd, 293, 1, 3);
 	snd = BHiShelf.ar(snd, 2349, 1, 3);
 
-	snd = snd + (GVerb.ar(snd.sum, 30, 0.2, damping:0.001) * -18.dbamp);
+	snd = snd + (GVerb.ar(snd.sum, 22, 0.2, damping:0.001) * -18.dbamp);
 
 	snd = RLPF.ar(snd, XLine.kr(698, 4186, dur) + (3 * SinOsc.ar(15/140)), XLine.kr(0.8, 0.4, dur));
 	snd = HPF.ar(snd, 123);
@@ -202,9 +236,10 @@ Synth(\kick);
 Synth(\kick2);
 Synth(\snare);
 Synth(\gun);
+Synth(\gun2);
 
 (
-var s, bpm, beat, root;
+var s, bpm, beat, root, play, section1, section2;
 s = Server.default;
 bpm = 140;
 beat = 60 / bpm;
@@ -212,174 +247,23 @@ beat = 60 / bpm;
 root = 38; // d0
 
 
-Routine({
-	var play, bass;
+play = { |synthDef, duration, args|
+	var synth;
+	s.bind { synth = Synth(synthDef, args ++ [duration: duration]) };
+	duration.wait;
+	s.bind { synth.set(\gate, 0) };
 
+};
 
-	play = { |synthDef, duration, args|
-		var synth;
-		s.bind { synth = Synth(synthDef, args ++ [duration: duration]) };
-		duration.wait;
-		s.bind { synth.set(\gate, 0) };
-	};
+section1 = Routine({
+	var bass, drums, gun, guitar;
 
-
-	bass = Routine({
-		// m1
-		play.(\bass, beat * 1, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		(beat* 0.5).wait;
-		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
-		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
-		(beat * 0.25).wait;
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps ]);
-		(beat * 0.30).wait;
-		play.(\bass, beat * 1, [ freq: (root + 3).midicps ]);
-
-		// m2
-		play.(\bass, beat * 1, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		(beat* 0.5).wait;
-		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
-		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
-		(beat * 0.25).wait;
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps ]);
-		(beat * 0.30).wait;
-		play.(\bass, beat * 1, [ freq: (root + 3).midicps ]);
-
-		// m3
-		play.(\bass, beat * 1, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		(beat* 0.5).wait;
-		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
-		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
-		(beat * 0.25).wait;
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps ]);
-		(beat * 0.30).wait;
-		play.(\bass, beat * 1, [ freq: (root + 3).midicps ]);
-
-		// m4
-		play.(\bass, beat * 1, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		(beat* 0.5).wait;
-		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, fbDamp: -13.dbamp ]);
-		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
-		(beat * 0.25).wait;
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		play.(\bass, beat * 1, [ freq: (root + 5).midicps, fbDamp: -12.dbamp ]);
-		play.(\bass, beat * 0.45, [ freq: (root + 3).midicps, amp:0.9 ]);
-		(beat * 0.05).wait;
-		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps, amp:0.85 ]);
-		(beat * 0.05).wait;
-
-		// m5
-		play.(\bass, beat * 1, [ freq: root.midicps, amp: 0.9 ]);
-		play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
-		(beat* 0.5).wait;
-		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -12.dbamp ]);
-		play.(\bass, beat * 0.75, [ freq: root.midicps, amp: 0.9 ]);
-		(beat * 0.25).wait;
-		play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
-		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -14.dbamp ]);
-		(beat * 0.30).wait;
-		play.(\bass, beat * 1, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -14.dbamp]);
-
-		// m6
-		play.(\bass, beat * 1, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		(beat* 0.5).wait;
-		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, fbDamp: -12.dbamp ]);
-		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
-		(beat * 0.25).wait;
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps ]);
-		(beat * 0.05).wait;
-		play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
-		(beat * 0.05).wait;
-		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps ]);
-		(beat * 0.05).wait;
-		play.(\bass, beat * 0.47, [ freq: (root + 7).midicps ]);
-		(beat * 0.03).wait;
-
-		// m7
-		play.(\bass, beat * 1, [ freq: root.midicps, amp: 0.9 ]);
-		play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
-		(beat* 0.5).wait;
-		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -11.dbamp ]);
-		play.(\bass, beat * 0.75, [ freq: root.midicps, amp: 0.9 ]);
-		(beat * 0.25).wait;
-		play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
-		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps, amp: 0.9 ]);
-		(beat * 0.30).wait;
-		play.(\bass, beat * 1, [ freq: (root + 3).midicps, amp: 0.9 ]);
-
-		// m8
-		play.(\bass, beat * 1, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		(beat* 0.5).wait;
-		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
-		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
-		(beat * 0.25).wait;
-		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
-		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps ]);
-		(beat * 0.05).wait;
-		play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
-		(beat * 0.05).wait;
-		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps ]);
-		(beat * 0.05).wait;
-		play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
-		(beat * 0.05).wait;
-	});
-
-
-	// 7/4
-
-	// m1
-	loop {
-		bass.play;
-	};
-	2.do {
-
+	bass = {
 		Routine({
-			s.bind { Synth(\gun) };
-		}).play;
-
-
-		Routine({
-			s.bind { Synth(\kick2) };
-			(beat * 2).wait;
-			s.bind { Synth(\snare, [  delay: 30/140  ]) };
-
-			(beat * 0.5).wait;
-			s.bind { Synth(\snare, [ delay: 0, amp: 0.2 ]) };
-			(beat * 1.0).wait;
-
-			s.bind { Synth(\kick, [ delay: 0, amp: 0.4 ]) };
-			(beat * 0.5).wait;
-			s.bind { Synth(\kick2, [ delay: 0, amp: 0.3 ]) };
-
-
-			s.bind { Synth(\kick, [ amp: [0.4, 0.1, 0.5].choose ]) };
-			(beat * 0.5).wait;
-			s.bind { Synth(\kick, [ amp: [0.8, 0.6, 0].choose ]) };
-			(beat * 0.5).wait;
-			(beat * 1).wait;
-
-
-			s.bind { Synth(\snare, [ delay: 30/140 ]) };
-			beat.wait;
-		}).play;
-
-		Routine({
+			// m1
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 			(beat* 0.5).wait;
-
-
-
 			play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
 			play.(\bass, beat * 0.75, [ freq: root.midicps ]);
 			(beat * 0.25).wait;
@@ -387,25 +271,8 @@ Routine({
 			play.(\bass, beat * 0.70, [ freq: (root + 3).midicps ]);
 			(beat * 0.30).wait;
 			play.(\bass, beat * 1, [ freq: (root + 3).midicps ]);
-		}).play;
 
-		(beat*7).wait;
-
-
-		// m2
-
-		Routine({
-			s.bind { Synth(\kick) };
-			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 25/140 ]) };
-			(beat * 2).wait;
-			s.bind { Synth(\kick2) };
-			(beat * 2.5).wait;
-			s.bind { Synth(\snare, [ delay: 10/140 ]) };
-			(beat * 0.5).wait;
-		}).play;
-
-		Routine({
+			// m2
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 			(beat* 0.5).wait;
@@ -421,33 +288,8 @@ Routine({
 			(beat * 0.05).wait;
 			play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
 			(beat * 0.05).wait;
-		}).play;
 
-		(beat * 7).wait;
-
-		// m3
-		Routine({
-			s.bind { Synth(\gun) };
-		}).play;
-
-		Routine({
-			s.bind { Synth(\kick2) };
-			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 20/140 ]) };
-			(beat * 2).wait;
-			s.bind { Synth(\kick, [ amp: [0.4, 0.1, 0.5].choose ]) };
-			(beat * 0.5).wait;
-			s.bind { Synth(\kick, [ amp: [0.8, 0.6, 0].choose ]) };
-			(beat * 0.5).wait;
-			(beat * 1).wait;
-
-
-			s.bind { Synth(\snare, [ delay: 30/140 ]) };
-			beat.wait;
-		}).play;
-
-
-		Routine({
+			// m3
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 			(beat* 0.5).wait;
@@ -458,24 +300,8 @@ Routine({
 			play.(\bass, beat * 0.70, [ freq: (root + 3).midicps ]);
 			(beat * 0.30).wait;
 			play.(\bass, beat * 1, [ freq: (root + 3).midicps ]);
-		}).play;
 
-		(beat * 7).wait;
-
-		// m4
-
-		Routine({
-			s.bind { Synth(\kick) };
-			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 25/140 ]) };
-			(beat * 2).wait;
-			s.bind { Synth(\kick2) };
-			(beat * 2.5).wait;
-			s.bind { Synth(\snare, [ delay: 10/140 ]) };
-			(beat * 0.5).wait;
-		}).play;
-
-		Routine({
+			// m4
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 			(beat* 0.5).wait;
@@ -488,35 +314,8 @@ Routine({
 			(beat * 0.05).wait;
 			play.(\bass, beat * 0.45, [ freq: (root + 5).midicps, amp:0.85 ]);
 			(beat * 0.05).wait;
-		}).play;
 
-		(beat*7).wait;
-
-		// m5
-		Routine({
-			s.bind { Synth(\gun) };
-		}).play;
-
-
-		Routine({
-			play.(\guitar, beat*6.9, [ freq: root.midicps ]);
-
-		}).play;
-
-		Routine({
-			s.bind { Synth(\kick) };
-			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 25/140 ]) };
-			(beat * 2).wait;
-			s.bind { Synth(\kick2) };
-			(beat * 2.5).wait;
-			s.bind { Synth(\snare, [ delay: 10/140 ]) };
-			(beat * 0.5).wait;
-		}).play;
-
-
-		Routine({
-
+			// m5
 			play.(\bass, beat * 1, [ freq: root.midicps, amp: 0.9 ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
 			(beat* 0.5).wait;
@@ -527,28 +326,8 @@ Routine({
 			play.(\bass, beat * 0.70, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -14.dbamp ]);
 			(beat * 0.30).wait;
 			play.(\bass, beat * 1, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -14.dbamp]);
-		}).play;
 
-		(beat*7).wait;
-
-		// m6
-		Routine({
-			play.(\guitar, beat*6.9, [ freq: (root + 2).midicps ]);
-
-		}).play;
-
-		Routine({
-			s.bind { Synth(\kick) };
-			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 25/140 ]) };
-			(beat * 2).wait;
-			s.bind { Synth(\kick2) };
-			(beat * 2.5).wait;
-			s.bind { Synth(\snare, [ delay: 10/140 ]) };
-			(beat * 0.5).wait;
-		}).play;
-
-		Routine({
+			// m6
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 			(beat* 0.5).wait;
@@ -564,30 +343,8 @@ Routine({
 			(beat * 0.05).wait;
 			play.(\bass, beat * 0.47, [ freq: (root + 7).midicps ]);
 			(beat * 0.03).wait;
-		}).play;
 
-		(beat*7).wait;
-
-		// m7
-		Routine({
-			play.(\guitar, beat*6.9, [ freq: (root + 3).midicps ]);
-
-		}).play;
-
-		Routine({
-			s.bind { Synth(\kick) };
-			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 25/140 ]) };
-			(beat * 2).wait;
-			s.bind { Synth(\kick2) };
-			(beat * 2.5).wait;
-			s.bind { Synth(\snare, [ delay: 10/140 ]) };
-			(beat * 0.5).wait;
-		}).play;
-
-
-		Routine({
-
+			// m7
 			play.(\bass, beat * 1, [ freq: root.midicps, amp: 0.9 ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
 			(beat* 0.5).wait;
@@ -598,28 +355,8 @@ Routine({
 			play.(\bass, beat * 0.70, [ freq: (root + 3).midicps, amp: 0.9 ]);
 			(beat * 0.30).wait;
 			play.(\bass, beat * 1, [ freq: (root + 3).midicps, amp: 0.9 ]);
-		}).play;
 
-		(beat*7).wait;
-
-		// m8
-		Routine({
-			play.(\guitar, beat*6.9, [ freq: (root + 5).midicps ]);
-
-		}).play;
-
-		Routine({
-			s.bind { Synth(\kick) };
-			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 25/140 ]) };
-			(beat * 2).wait;
-			s.bind { Synth(\kick2) };
-			(beat * 2.5).wait;
-			s.bind { Synth(\snare, [ delay: 20/140 ]) };
-			(beat * 0.5).wait;
-		}).play;
-
-		Routine({
+			// m8
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
 			(beat* 0.5).wait;
@@ -635,11 +372,258 @@ Routine({
 			(beat * 0.05).wait;
 			play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
 			(beat * 0.05).wait;
-		}).play;
-
-		(beat*7).wait;
+		});
 	};
+
+	drums = {
+		Routine({
+			// m1
+			s.bind { Synth(\kick2) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare, [  delay: 30/140  ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\snare, [ delay: 0, amp: 0.2 ]) };
+			(beat * 1.0).wait;
+			s.bind { Synth(\kick, [ delay: 0, amp: 0.4 ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\kick2, [ delay: 0, amp: 0.3 ]) };
+			s.bind { Synth(\kick, [ amp: [0.4, 0.1, 0.5].choose ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\kick, [ amp: [0.8, 0.6, 0].choose ]) };
+			(beat * 0.5).wait;
+			(beat * 1).wait;
+			s.bind { Synth(\snare, [ delay: 30/140 ]) };
+			beat.wait;
+
+			// m2
+			s.bind { Synth(\kick) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare, [ delay: 25/140 ]) };
+			(beat * 2).wait;
+			s.bind { Synth(\kick2) };
+			(beat * 2.5).wait;
+			s.bind { Synth(\snare, [ delay: 10/140 ]) };
+			(beat * 0.5).wait;
+
+			// m3
+			s.bind { Synth(\kick2) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare, [ delay: 20/140 ]) };
+			(beat * 2).wait;
+			s.bind { Synth(\kick, [ amp: [0.4, 0.1, 0.5].choose ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\kick, [ amp: [0.8, 0.6, 0].choose ]) };
+			(beat * 0.5).wait;
+			(beat * 1).wait;
+			s.bind { Synth(\snare, [ delay: 30/140 ]) };
+			beat.wait;
+
+			// m4
+			s.bind { Synth(\kick) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare, [ delay: 25/140 ]) };
+			(beat * 2).wait;
+			s.bind { Synth(\kick2) };
+			(beat * 2.5).wait;
+			s.bind { Synth(\snare, [ delay: 10/140 ]) };
+			(beat * 0.5).wait;
+
+			// m5
+			s.bind { Synth(\kick) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare, [ delay: 25/140 ]) };
+			(beat * 2).wait;
+			s.bind { Synth(\kick2) };
+			(beat * 2.5).wait;
+			s.bind { Synth(\snare, [ delay: 10/140 ]) };
+			(beat * 0.5).wait;
+
+			// m6
+			s.bind { Synth(\kick) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare, [ delay: 25/140 ]) };
+			(beat * 2).wait;
+			s.bind { Synth(\kick2) };
+			(beat * 2.5).wait;
+			s.bind { Synth(\snare, [ delay: 10/140 ]) };
+			(beat * 0.5).wait;
+
+			// m7
+			s.bind { Synth(\kick) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare, [ delay: 25/140 ]) };
+			(beat * 2).wait;
+			s.bind { Synth(\kick2) };
+			(beat * 2.5).wait;
+			s.bind { Synth(\snare, [ delay: 10/140 ]) };
+			(beat * 0.5).wait;
+
+			// m8
+			s.bind { Synth(\kick) };
+			(beat * 2).wait;
+			s.bind { Synth(\snare, [ delay: 25/140 ]) };
+			(beat * 2).wait;
+			s.bind { Synth(\kick2) };
+			(beat * 2.5).wait;
+			s.bind { Synth(\snare, [ delay: 20/140 ]) };
+			(beat * 0.5).wait;
+		});
+	};
+
+
+	gun = {
+		Routine({
+			// m1
+			s.bind { Synth(\gun2, [ rate: 0.55, amp: 0.6 ]) };
+			(beat * 14).wait;
+
+			// m3
+			s.bind { Synth(\gun2, [ rate: 0.6, amp: 0.6 ]) };
+			(beat * 14).wait;
+
+			// m5
+			s.bind { Synth(\gun2, [ rate: 0.4444, amp: 0.7 ]) };
+			(beat * 14).wait;
+
+			// m7
+			s.bind { Synth(\gun2, [ rate: 0.625, amp: 0.7 ]) };
+		});
+	};
+
+	guitar = {
+		Routine({
+			// m1 - m4
+			(beat * 28).wait;
+
+			// m5
+			play.(\guitar, beat*6.9, [ freq: root.midicps ]);
+			(beat * 0.1).wait;
+
+			// m6
+			play.(\guitar, beat*6.9, [ freq: (root + 2).midicps ]);
+			(beat * 0.1).wait;
+
+			// m7
+			play.(\guitar, beat*6.9, [ freq: (root + 3).midicps ]);
+			(beat * 0.1).wait;
+
+			// m8
+			play.(\guitar, beat*6.9, [ freq: (root + 5).midicps ]);
+			(beat * 0.1).wait;
+		});
+	};
+
+	bass.().play;
+	drums.().play;
+	gun.().play;
+	guitar.().play;
+});
+
+section2 = Routine({
+	var bass;
+
+	bass = {
+		Routine({
+			// m9
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+
+			// m10
+			play.(\bass, beat * 1.0, [ freq: (root - 2).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 7).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root - 5).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 3).midicps ]);
+
+			// m11
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+
+			// m12
+			play.(\bass, beat * 1.0, [ freq: (root - 2).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 7).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root - 5).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 7).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+
+
+			// m13
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root - 5).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root - 2).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root - 5).midicps ]);
+
+			// m14
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 12).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 7).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 7).midicps ]);
+			(beat * 0.5).wait;
+			play.(\bass, beat * 1.0, [ freq: (root + 7).midicps ]);
+			(beat * 0.5).wait;
+
+			// m15
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root - 5).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root - 2).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 3).midicps ]);
+
+			// m16
+			play.(\bass, beat * 1.0, [ freq: (root - 2).midicps ]);
+			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
+			play.(\bass, beat * 1.0, [ freq: (root + 3).midicps ]);
+			play.(\bass, beat * 0.5, [ freq: (root + 5).midicps ]);
+			play.(\bass, beat * 1.5, [ freq: (root + 7).midicps ]);
+			(beat * 0.5).wait;
+			play.(\bass, beat * 0.5, [ freq: (root + 7).midicps ]);
+			(beat * 0.5).wait;
+			play.(\bass, beat * 0.5, [ freq: (root + 7).midicps ]);
+		});
+	};
+
+	bass.().play;
+});
+
+Routine({
+
+	//section2.play;
+	//(beat * (7 * 8)).wait;
+	section1.play;
+	(beat * (7 * 8)).wait;
+	section1.reset;
+	section2.play;
 }).play;
 )
-
-Synth(\bass);
