@@ -213,7 +213,7 @@ root = 38; // d0
 
 
 Routine({
-	var play;
+	var play, bass;
 
 
 	play = { |synthDef, duration, args|
@@ -224,10 +224,123 @@ Routine({
 	};
 
 
+	bass = Routine({
+		// m1
+		play.(\bass, beat * 1, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		(beat* 0.5).wait;
+		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
+		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
+		(beat * 0.25).wait;
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps ]);
+		(beat * 0.30).wait;
+		play.(\bass, beat * 1, [ freq: (root + 3).midicps ]);
+
+		// m2
+		play.(\bass, beat * 1, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		(beat* 0.5).wait;
+		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
+		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
+		(beat * 0.25).wait;
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps ]);
+		(beat * 0.30).wait;
+		play.(\bass, beat * 1, [ freq: (root + 3).midicps ]);
+
+		// m3
+		play.(\bass, beat * 1, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		(beat* 0.5).wait;
+		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
+		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
+		(beat * 0.25).wait;
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps ]);
+		(beat * 0.30).wait;
+		play.(\bass, beat * 1, [ freq: (root + 3).midicps ]);
+
+		// m4
+		play.(\bass, beat * 1, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		(beat* 0.5).wait;
+		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, fbDamp: -13.dbamp ]);
+		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
+		(beat * 0.25).wait;
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		play.(\bass, beat * 1, [ freq: (root + 5).midicps, fbDamp: -12.dbamp ]);
+		play.(\bass, beat * 0.45, [ freq: (root + 3).midicps, amp:0.9 ]);
+		(beat * 0.05).wait;
+		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps, amp:0.85 ]);
+		(beat * 0.05).wait;
+
+		// m5
+		play.(\bass, beat * 1, [ freq: root.midicps, amp: 0.9 ]);
+		play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
+		(beat* 0.5).wait;
+		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -12.dbamp ]);
+		play.(\bass, beat * 0.75, [ freq: root.midicps, amp: 0.9 ]);
+		(beat * 0.25).wait;
+		play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
+		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -14.dbamp ]);
+		(beat * 0.30).wait;
+		play.(\bass, beat * 1, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -14.dbamp]);
+
+		// m6
+		play.(\bass, beat * 1, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		(beat* 0.5).wait;
+		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, fbDamp: -12.dbamp ]);
+		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
+		(beat * 0.25).wait;
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps ]);
+		(beat * 0.05).wait;
+		play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
+		(beat * 0.05).wait;
+		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps ]);
+		(beat * 0.05).wait;
+		play.(\bass, beat * 0.47, [ freq: (root + 7).midicps ]);
+		(beat * 0.03).wait;
+
+		// m7
+		play.(\bass, beat * 1, [ freq: root.midicps, amp: 0.9 ]);
+		play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
+		(beat* 0.5).wait;
+		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps, amp: 0.9, fbDamp: -11.dbamp ]);
+		play.(\bass, beat * 0.75, [ freq: root.midicps, amp: 0.9 ]);
+		(beat * 0.25).wait;
+		play.(\bass, beat * 0.5, [ freq: root.midicps, amp: 0.9 ]);
+		play.(\bass, beat * 0.70, [ freq: (root + 3).midicps, amp: 0.9 ]);
+		(beat * 0.30).wait;
+		play.(\bass, beat * 1, [ freq: (root + 3).midicps, amp: 0.9 ]);
+
+		// m8
+		play.(\bass, beat * 1, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		(beat* 0.5).wait;
+		play.(\bass, beat * 1.5, [ freq: (root + 3).midicps ]);
+		play.(\bass, beat * 0.75, [ freq: root.midicps ]);
+		(beat * 0.25).wait;
+		play.(\bass, beat * 0.5, [ freq: root.midicps ]);
+		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps ]);
+		(beat * 0.05).wait;
+		play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
+		(beat * 0.05).wait;
+		play.(\bass, beat * 0.45, [ freq: (root + 5).midicps ]);
+		(beat * 0.05).wait;
+		play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
+		(beat * 0.05).wait;
+	});
+
+
 	// 7/4
 
 	// m1
-
+	loop {
+		bass.play;
+	};
 	2.do {
 
 		Routine({
