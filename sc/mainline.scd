@@ -128,10 +128,11 @@ SynthDef(\gun2, {
 
 
 SynthDef(\kick, {
-	var snd, clickDuration;
+	var snd, clickDuration, freq;
 	clickDuration = 2e-3;
+	freq = \freq.kr(65);
 
-	snd = SinOsc.ar(65 * [-1, 1].midiratio * (1 + (7 * Env.perc(0.001, 0.03).ar))
+	snd = SinOsc.ar(freq * [-1, 1].midiratio * (1 + (7 * Env.perc(0.001, 0.03).ar))
 		* (1 + (0.5 * Env.perc(0.001, 0.5).ar)));
 
 	snd = Select.ar(Sweep.ar > clickDuration, [ Hasher.ar(Sweep.ar), DelayC.ar(snd, clickDuration, clickDuration)]);
@@ -232,7 +233,7 @@ SynthDef(\guitar, {
 )
 
 Synth(\guitar, [ freq: 38.midicps, dur: 3.0 ]);
-Synth(\kick);
+Synth(\kick, [ freq: 65 ]);
 Synth(\kick2);
 Synth(\snare);
 Synth(\gun);
@@ -259,7 +260,7 @@ section1 = Routine({
 	var bass, drums, gun, guitar;
 
 	bass = {
-		Routine({
+		fork {
 			// m1
 			play.(\bass, beat * 1, [ freq: root.midicps ]);
 			play.(\bass, beat * 0.5, [ freq: root.midicps ]);
@@ -372,12 +373,13 @@ section1 = Routine({
 			(beat * 0.05).wait;
 			play.(\bass, beat * 0.45, [ freq: (root + 3).midicps ]);
 			(beat * 0.05).wait;
-		});
+		};
 	};
 
 	drums = {
-		Routine({
+		fork {
 			// m1
+
 			s.bind { Synth(\kick2) };
 			(beat * 2).wait;
 			s.bind { Synth(\snare, [  delay: 30/140  ]) };
@@ -395,36 +397,58 @@ section1 = Routine({
 			s.bind { Synth(\snare, [ delay: 30/140 ]) };
 			beat.wait;
 
+
 			// m2
 			s.bind { Synth(\kick) };
 			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 25/140 ]) };
+			s.bind { Synth(\snare, [ delay: 20/140 ]) };
 			(beat * 2).wait;
-			s.bind { Synth(\kick2) };
-			(beat * 2.5).wait;
-			s.bind { Synth(\snare, [ delay: 10/140 ]) };
+			s.bind { Synth(\kick) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\kick2, [ amp: [0.8, 0.7].choose ]) };
+			(beat * 1.0).wait;
+			s.bind { Synth(\kick2, [ amp: [0.5, 0.3].choose ] ) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\kick, [ amp: 1.05, freq: 80 ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\snare, [ delay: 7/140 ]) };
 			(beat * 0.5).wait;
 
 			// m3
 			s.bind { Synth(\kick2) };
 			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 20/140 ]) };
-			(beat * 2).wait;
-			s.bind { Synth(\kick, [ amp: [0.4, 0.1, 0.5].choose ]) };
+			s.bind { Synth(\snare, [ delay: 15/140 ]) };
 			(beat * 0.5).wait;
-			s.bind { Synth(\kick, [ amp: [0.8, 0.6, 0].choose ]) };
+			s.bind { Synth(\kick, [ amp: 0.4, freq: 75 ]) };
+			(beat * 1.5).wait;
+			s.bind { Synth(\kick, [ amp: [0.4, 0.1, 0.5].choose, freq: 73 ]) };
 			(beat * 0.5).wait;
+			s.bind { Synth(\kick, [ amp: [0.8, 0.6, 0].choose, freq: 72 ]) };
 			(beat * 1).wait;
+			s.bind { Synth(\snare, [ delay: 1/140 ]) };
+			(beat * 0.5).wait;
 			s.bind { Synth(\snare, [ delay: 30/140 ]) };
 			beat.wait;
 
+
 			// m4
-			s.bind { Synth(\kick) };
-			(beat * 2).wait;
-			s.bind { Synth(\snare, [ delay: 25/140 ]) };
-			(beat * 2).wait;
 			s.bind { Synth(\kick2) };
-			(beat * 2.5).wait;
+			(beat * 2).wait;
+			s.bind { Synth(\snare, [  delay: 2/140 ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\snare, [ amp: 0.5, delay: 25/140 ]) };
+			s.bind { Synth(\kick, [ amp: 0.3, freq: 65 ]) };
+			(beat * 1.0).wait;
+			s.bind { Synth(\kick, [ amp: 0.6, freq: 70 ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\kick) };
+			(beat * 1.0).wait;
+			s.bind { Synth(\kick2, [ amp: 0.2, freq: 70 ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\kick2, [ amp: 0.3, freq: 70 ]) };
+			(beat * 0.5).wait;
+			s.bind { Synth(\kick, [ amp: 0.5, freq: 80 ]) };
+			(beat * 0.5).wait;
 			s.bind { Synth(\snare, [ delay: 10/140 ]) };
 			(beat * 0.5).wait;
 
@@ -467,12 +491,13 @@ section1 = Routine({
 			(beat * 2.5).wait;
 			s.bind { Synth(\snare, [ delay: 20/140 ]) };
 			(beat * 0.5).wait;
-		});
+
+		};
 	};
 
 
 	gun = {
-		Routine({
+		fork {
 			// m1
 			s.bind { Synth(\gun2, [ rate: 0.55, amp: 0.6 ]) };
 			(beat * 14).wait;
@@ -487,11 +512,11 @@ section1 = Routine({
 
 			// m7
 			s.bind { Synth(\gun2, [ rate: 0.625, amp: 0.7 ]) };
-		});
+		};
 	};
 
 	guitar = {
-		Routine({
+		fork {
 			// m1 - m4
 			(beat * 28).wait;
 
@@ -510,20 +535,20 @@ section1 = Routine({
 			// m8
 			play.(\guitar, beat*6.9, [ freq: (root + 5).midicps ]);
 			(beat * 0.1).wait;
-		});
+		};
 	};
 
-	bass.().play;
-	drums.().play;
-	gun.().play;
-	guitar.().play;
+	bass.();
+	drums.();
+	gun.();
+	guitar.();
 });
 
 section2 = Routine({
 	var bass;
 
 	bass = {
-		Routine({
+		fork {
 			// m9
 			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
 			play.(\bass, beat * 1.0, [ freq: root.midicps ]);
@@ -611,10 +636,10 @@ section2 = Routine({
 			play.(\bass, beat * 0.5, [ freq: (root + 7).midicps ]);
 			(beat * 0.5).wait;
 			play.(\bass, beat * 0.5, [ freq: (root + 7).midicps ]);
-		});
+		};
 	};
 
-	bass.().play;
+	bass.();
 });
 
 Routine({
@@ -624,6 +649,6 @@ Routine({
 	section1.play;
 	(beat * (7 * 8)).wait;
 	section1.reset;
-	section2.play;
+	//section2.play;
 }).play;
 )
