@@ -77,7 +77,7 @@ notes2 = Pseq(notes.midicps, inf).asStream;
 
 tempo2 = Pseq([
 	Pseq([Pseq([1 * beat4], notes.size)], 6),
-	Pseq([(74/75) * beat4 ], 75)], inf).asStream;
+	Pseq([(69/70) * beat4 ], 70)], inf).asStream;
 
 Routine({
 	var fx;
