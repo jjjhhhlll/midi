@@ -230,7 +230,30 @@ SynthDef(\guitar, {
 	Out.ar(\out.kr(0), snd);
 }).add;
 
+SynthDef(\sweep, {
+	var snd, freq, rate, dur, lowdur;
+	rate = 3;
+	freq = \freq.kr(100);
+	lowdur = \lowDuration.kr(60/140);
+	dur = \duration.kr(120/140);
+
+	snd = Saw.ar(Env.pairs([[0, freq], [lowdur, freq], [lowdur*2, freq * 2], [dur - lowdur - (lowdur *2), freq * 2]]).kr() * [ 1, 2, 3] ).sum;
+	1.do {
+		snd = RLPF.ar(snd, LFNoise2.kr(rate).linexp(-1, 1, 1000, 2500), 0.25);
+	};
+	snd = snd + HPF.ar(Splay.ar(DelayC.ar(snd, 0.1, LFNoise2.kr(3 ! 5).linlin(-1 , 1, 0, 0.005))), 1000);
+	snd = (snd * 1).fold2;
+	snd = snd * Env.linen(0.01, dur, 0.01).ar(Done.freeSelf);
+	snd = snd * -13.dbamp;
+	Out.ar(\out.kr(0), snd);
+}).add;
+
 )
+
+Synth(\sweep,  [freq: 38.midicps * 2, duration: (30/160)*8, lowDuration: 30/160]);
+Synth(\sweep,  [freq: 36.midicps * 2, duration: (30/160)*8, lowDuration: 30/160]);
+Synth(\sweep,  [freq: 33.midicps * 2, duration: (30/160)*8, lowDuration: 30/160]);
+
 
 Synth(\guitar, [ freq: 38.midicps, dur: 3.0 ]);
 Synth(\kick, [ freq: 65 ]);
@@ -644,11 +667,11 @@ section2 = Routine({
 
 Routine({
 
-	//section2.play;
-	//(beat * (7 * 8)).wait;
-	section1.play;
+	section2.play;
+	(beat * (7 * 8)).wait;
+	//section1.play;
 	(beat * (7 * 8)).wait;
 	section1.reset;
-	//section2.play;
+	section2.play;
 }).play;
 )
